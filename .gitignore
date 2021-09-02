@@ -1,6 +1,7 @@
 # File with api keys
-
 keys.json
+
+dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
