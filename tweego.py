@@ -8,14 +8,14 @@ import json
 
 import requests
 from TwitterAPI import TwitterAPI, TwitterPager
-    
+
 #     url = create_url(screen_name, cursor)
 #     json_response = connect_to_endpoint(url).json()
 #     next_cursor = json_response["next_cursor_str"]
 #     users = json_response["users"]
 #     for user in users:
 #         json.dump(user, open("{}/{}.json".format(dump_dir, user["id_str"]), "w"))
-    
+
 #     while next_cursor != "0":
 #         url = create_url(screen_name, next_cursor)
 #         response = connect_to_endpoint(url)
@@ -35,6 +35,7 @@ from TwitterAPI import TwitterAPI, TwitterPager
 
 DATA_DIR = 'dataset'
 
+
 def encode_query(query):
     '''
     To preserve the original query, the query is
@@ -52,24 +53,37 @@ def create_api(config):
     return api
 
 
-def api_request(endpoint, params):
-    '''Respects api limits and retries after waiting.'''
-    r = api.request(endpoint, params)
-    if r.headers['x-rate-limit-remaining'] == '0':
-        waiting_time = int(
-            r.headers['x-rate-limit-reset']) - int(round(time.time()))
-        print(
-            'Hit the API limit. Waiting for refresh at {}.'
-            .format(datetime.datetime.utcfromtimestamp(int(r.headers['x-rate-limit-reset']))
-                    .strftime('%Y-%m-%dT%H:%M:%SZ')))
-        time.sleep(waiting_time)
-        return (api_request(endpoint, params))
-    return(r)
+def pick_api(apis):
+    available = [api["available"] for api in apis]
+    if all(v == 0 for v in available):
+        return None, -1
+    for index, api in enumerate(apis):
+        if api["available"] == 1:
+            return api, index
 
 
-def collect_friends(account_id, cursor=-1, over5000=False):
-    '''Get IDs of the accounts a given account follows
-    over5000 allows to collect more than 5000 friends'''
+def api_request(apis, endpoint, params):
+    # print(apis)
+    api, index = pick_api(apis)
+    if index != -1:
+        r = api["connection"].request(endpoint, params)
+        if r.headers['x-rate-limit-remaining'] == '0':
+            apis[index]["available"] = 0
+            return (api_request(apis, endpoint, params))
+        return(r)
+
+    else:
+        apis[index]["available"] = 0
+        wait_time = datetime.datetime.now() + datetime.timedelta(minutes=15)
+        print('Hit the API limit. Waiting for refresh at {}.'
+              .format(wait_time.strftime("%H:%M:%S")))
+        time.sleep(15 * 60)
+        for api in apis:
+            api["available"] = 1
+        return (api_request(apis, endpoint, params))
+
+
+def collect_friends(apis, account_id, cursor=-1, limit=5000):
     ids = []
     r = api_request(
         'friends/ids', {'user_id': account_id, 'cursor': cursor})
@@ -86,10 +100,11 @@ def collect_friends(account_id, cursor=-1, over5000=False):
         elif 'message' in item:
             print('{0} ({1})'.format(item['message'], item['code']))
 
-    if over5000:
+    if limit > 5000:
         if 'next_cursor' in r.json:
             if r.json['next_cursor'] != 0:
-                ids = ids + collect_friends(account_id, r.json['next_cursor'])
+                ids = ids + \
+                    collect_friends(apis, account_id, r.json['next_cursor'])
 
     return(ids)
 
@@ -97,7 +112,7 @@ def collect_friends(account_id, cursor=-1, over5000=False):
 def get_friends(friend_id):
     friends = []
     try:
-        with open('{0}/{1}.f'.format(DATA_DIR, friend_id)) as f:
+        with open('{0}/{1}.txt'.format(DATA_DIR, friend_id)) as f:
             for line in f:
                 friends.append(int(line))
     except:
@@ -110,13 +125,18 @@ def save_friends(user, ids):
         f.write(str.join('\n', (str(x) for x in ids)))
 
 
-def collect_and_save_friends(user, refresh=False):
-    if not refresh and os.path.exists('{0}/{1}.f'.format(DATA_DIR, user)):
+def collect_and_save_friends(apis, user, refresh=False):
+    if not refresh and os.path.exists('{0}/{1}.txt'.format(DATA_DIR, user)):
         return()
     else:
-        friends = collect_friends(user)
+        friends = collect_friends(apis, user)
         save_friends(user, friends)
         return()
+
+
+def create_dir(dir_name):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
 
 
 keys_file = "keys.json"
@@ -125,9 +145,44 @@ keys = json.load(open(keys_file, 'r'))
 apis = []
 for key in keys:
     api = create_api(key)
-    apis.append(api)
+    apis.append({"connection": api, "available": 1, "time": None})
 
-api = apis[0]
 screen_name = "verified"
-print(api_request(
-        'friends/ids', {'screen_name': screen_name, 'cursor': -1}).json())
+
+dump_dir = "{}/{}".format(DATA_DIR, screen_name)
+create_dir(dump_dir)
+
+
+def init(apis, screen_name, cursor=-1):
+    ids = []
+    r = api_request(apis,
+                    'friends/ids', {'screen_name': screen_name, 'cursor': cursor})
+
+    # todo: wait if api requests are exhausted
+
+    if 'errors' in r.json():
+        if r.json()['errors'][0]['code'] == 34:
+            return(ids)
+
+    # for item in r:
+    if 'ids' in r.json():
+        ids = r.json()['ids']
+        print("Collected {} ids".format(len(ids)))
+        # ids.append(item)
+    elif 'message' in r.json():
+        print('{0} ({1})'.format(r.json()['message'], r.json()['code']))
+
+    if 'next_cursor' in r.json():
+        if r.json()['next_cursor'] != 0:
+            ids = ids + init(apis, screen_name, r.json()['next_cursor'])
+
+    return(ids)
+
+
+def first_order_ego(apis, screen_name):
+    ids = init(apis, screen_name)
+
+    with open('{0}/{1}.txt'.format(dump_dir, screen_name), 'w', encoding='utf-8') as f:
+        f.write(str.join('\n', (str(x) for x in ids)))
+
+first_order_ego(apis, screen_name)
