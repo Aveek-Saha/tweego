@@ -85,7 +85,7 @@ def api_request(apis, endpoint, params):
 
 def collect_friends(apis, account_id, cursor=-1, limit=5000):
     ids = []
-    r = api_request(
+    r = api_request(apis,
         'friends/ids', {'user_id': account_id, 'cursor': cursor})
 
     # todo: wait if api requests are exhausted
@@ -94,17 +94,15 @@ def collect_friends(apis, account_id, cursor=-1, limit=5000):
         if r.json()['errors'][0]['code'] == 34:
             return(ids)
 
-    for item in r:
-        if isinstance(item, int):
-            ids.append(item)
-        elif 'message' in item:
-            print('{0} ({1})'.format(item['message'], item['code']))
+    if 'ids' in r.json():
+        ids = r.json()['ids']
+        print("Collected {} ids".format(len(ids)))
 
     if limit > 5000:
-        if 'next_cursor' in r.json:
-            if r.json['next_cursor'] != 0:
+        if 'next_cursor' in r.json():
+            if r.json()['next_cursor'] != 0:
                 ids = ids + \
-                    collect_friends(apis, account_id, r.json['next_cursor'])
+                    collect_friends(apis, account_id, r.json()['next_cursor'], limit)
 
     return(ids)
 
@@ -185,4 +183,30 @@ def first_order_ego(apis, screen_name):
     with open('{0}/{1}.txt'.format(dump_dir, screen_name), 'w', encoding='utf-8') as f:
         f.write(str.join('\n', (str(x) for x in ids)))
 
-first_order_ego(apis, screen_name)
+# first_order_ego(apis, screen_name)
+
+
+def get_ego_center_friends(screen_name):
+    friends = []
+    try:
+        with open('{}/{}.txt'.format(dump_dir, screen_name)) as f:
+            for line in f:
+                friends.append(int(line))
+    except:
+        pass
+    return (friends)
+
+def second_order_ego(screen_name):
+    friends = get_ego_center_friends(screen_name)
+
+    for friend in friends:
+        friend_dir = "{}/{}".format(dump_dir, str(friend))
+        create_dir(friend_dir)
+
+        ids = collect_friends(apis, friend, limit=10000)
+
+        with open('{0}/{1}.txt'.format(friend_dir, str(friend)), 'w', encoding='utf-8') as f:
+            f.write(str.join('\n', (str(x) for x in ids)))
+
+
+second_order_ego(screen_name)
