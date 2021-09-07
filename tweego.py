@@ -1,4 +1,4 @@
-from multiprocessing.pool import Pool
+from tqdm import tqdm
 import os
 import errno
 import urllib.parse
@@ -75,7 +75,7 @@ def api_request(apis, endpoint, params):
     else:
         apis[index]["available"] = 0
         wait_time = datetime.datetime.now() + datetime.timedelta(minutes=15)
-        print('Hit the API limit. Waiting for refresh at {}.'
+        print('\nHit the API limit. Waiting for refresh at {}.'
               .format(wait_time.strftime("%H:%M:%S")))
         time.sleep(15 * 60)
         for api in apis:
@@ -86,7 +86,7 @@ def api_request(apis, endpoint, params):
 def collect_friends(apis, account_id, cursor=-1, limit=5000):
     ids = []
     r = api_request(apis,
-        'friends/ids', {'user_id': account_id, 'cursor': cursor})
+                    'friends/ids', {'user_id': account_id, 'cursor': cursor})
 
     # todo: wait if api requests are exhausted
 
@@ -96,13 +96,14 @@ def collect_friends(apis, account_id, cursor=-1, limit=5000):
 
     if 'ids' in r.json():
         ids = r.json()['ids']
-        print("Collected {} ids".format(len(ids)))
+        # print("Collected {} ids".format(len(ids)))
 
     if limit > 5000:
         if 'next_cursor' in r.json():
             if r.json()['next_cursor'] != 0:
                 ids = ids + \
-                    collect_friends(apis, account_id, r.json()['next_cursor'], limit)
+                    collect_friends(apis, account_id, r.json()
+                                    ['next_cursor'], limit)
 
     return(ids)
 
@@ -135,6 +136,10 @@ def collect_and_save_friends(apis, user, refresh=False):
 def create_dir(dir_name):
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
+
+
+def is_folder_exists(folder_name):
+    return os.path.exists(folder_name)
 
 
 keys_file = "keys.json"
@@ -196,11 +201,14 @@ def get_ego_center_friends(screen_name):
         pass
     return (friends)
 
+
 def second_order_ego(screen_name):
     friends = get_ego_center_friends(screen_name)
 
-    for friend in friends:
+    for friend in tqdm(friends):
         friend_dir = "{}/{}".format(dump_dir, str(friend))
+        if is_folder_exists('{0}/{1}.txt'.format(friend_dir, str(friend))):
+            continue
         create_dir(friend_dir)
 
         ids = collect_friends(apis, friend, limit=10000)
