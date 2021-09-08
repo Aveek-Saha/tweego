@@ -153,7 +153,9 @@ for key in keys:
 screen_name = "verified"
 
 dump_dir = "{}/{}".format(DATA_DIR, screen_name)
+user_dir = "{}/{}".format(DATA_DIR, "users")
 create_dir(dump_dir)
+create_dir(user_dir)
 
 
 def init(apis, screen_name, cursor=-1):
@@ -217,4 +219,60 @@ def second_order_ego(screen_name):
             f.write(str.join('\n', (str(x) for x in ids)))
 
 
-second_order_ego(screen_name)
+# second_order_ego(screen_name)
+
+# def get_second_order_friends(friend_id):
+#     friends = []
+#     friend_dir = "{}/{}".format(dump_dir, str(friend_id))
+#     try:
+#         with open('{}/{}.txt'.format(friend_dir, str(friend_id))) as f:
+#             for line in f:
+#                 friends.append(int(line))
+#     except:
+#         pass
+#     return friends
+
+
+# def collect_users(screen_name):
+    
+#     friends = get_ego_center_friends(screen_name)
+
+#     users = friends
+#     print(len(users))
+#     for friend in tqdm(friends[:20]):
+#         user_friends = get_second_order_friends(friend)
+#         users.extend(user_friends)
+
+#     unique_users = list(set(users))
+
+#     print(len(users))
+#     print(len(unique_users))
+
+# collect_users(screen_name)
+
+
+def get_users(apis, user_id):
+    
+    r = api_request(apis,
+                    'users/lookup', {'user_id': user_id, 'include_entities': "false"})
+    
+    users = r.json()
+
+    if 'errors' in r.json():
+        if r.json()['errors'][0]['code'] == 34:
+            return(users)
+
+    return(users)
+
+def friend_details(screen_name):
+    friends = get_ego_center_friends(screen_name)
+    n = 100
+    groups = [friends[i:i+n] for i in range(0, len(friends), n)]
+
+    for group in tqdm(groups):
+        users = get_users(apis, ",".join(map(str,group)))
+        for user in users:
+            json.dump(user, open("{}/{}.json".format(user_dir, user["id"]), "w"))
+
+friend_details(screen_name)
+
