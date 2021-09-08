@@ -9,6 +9,9 @@ import json
 import requests
 from TwitterAPI import TwitterAPI, TwitterPager
 
+import networkx as nx
+import matplotlib.pyplot as plt
+
 #     url = create_url(screen_name, cursor)
 #     json_response = connect_to_endpoint(url).json()
 #     next_cursor = json_response["next_cursor_str"]
@@ -221,16 +224,16 @@ def second_order_ego(screen_name):
 
 # second_order_ego(screen_name)
 
-# def get_second_order_friends(friend_id):
-#     friends = []
-#     friend_dir = "{}/{}".format(dump_dir, str(friend_id))
-#     try:
-#         with open('{}/{}.txt'.format(friend_dir, str(friend_id))) as f:
-#             for line in f:
-#                 friends.append(int(line))
-#     except:
-#         pass
-#     return friends
+def get_second_order_friends(friend_id):
+    friends = []
+    friend_dir = "{}/{}".format(dump_dir, str(friend_id))
+    try:
+        with open('{}/{}.txt'.format(friend_dir, str(friend_id))) as f:
+            for line in f:
+                friends.append(int(line))
+    except:
+        pass
+    return friends
 
 
 # def collect_users(screen_name):
@@ -274,5 +277,24 @@ def friend_details(screen_name):
         for user in users:
             json.dump(user, open("{}/{}.json".format(user_dir, user["id"]), "w"))
 
-friend_details(screen_name)
+# friend_details(screen_name)
 
+def create_gml(screen_name):
+    G = nx.DiGraph()
+    friends = get_ego_center_friends(screen_name)
+
+    edges = [(screen_name, x) for x in friends]
+    G.add_edges_from(edges)
+
+    for friend in tqdm(friends):
+        second_friends = get_second_order_friends(friend)
+        second_edge = [(friend, x) for x in second_friends if x in friends]
+
+        # edges.extend(second_edge)
+
+        G.add_edges_from(second_edge)
+
+    nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
+
+
+# create_gml(screen_name)
