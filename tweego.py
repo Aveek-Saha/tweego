@@ -283,10 +283,21 @@ def create_gml(screen_name):
     G = nx.DiGraph()
     friends = get_ego_center_friends(screen_name)
 
-    edges = [(screen_name, x) for x in friends]
-    G.add_edges_from(edges)
+    # edges = [(screen_name, x) for x in friends]
+    # G.add_edges_from(edges)
 
     for friend in tqdm(friends):
+        user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
+        details = {
+            "screen_name": user["screen_name"],
+            "followers_count": user["followers_count"],
+            "friends_count": user["friends_count"],
+            "listed_count": user["listed_count"],
+            "verified": user["verified"],
+            "statuses_count": user["statuses_count"]
+        }
+
+        G.add_nodes_from([(friend, details)])
         second_friends = get_second_order_friends(friend)
         second_edge = [(friend, x) for x in second_friends if x in friends]
 
@@ -297,4 +308,4 @@ def create_gml(screen_name):
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
 
 
-# create_gml(screen_name)
+create_gml(screen_name)
