@@ -291,7 +291,7 @@ def create_gml(screen_name):
     for friend in tqdm(friends):
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
         details = {
-            "id": user["id_str"],
+            "userid": user["id_str"],
             "followers_count": user["followers_count"],
             "friends_count": user["friends_count"],
             "listed_count": user["listed_count"],
