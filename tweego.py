@@ -286,10 +286,12 @@ def create_gml(screen_name):
     # edges = [(screen_name, x) for x in friends]
     # G.add_edges_from(edges)
 
+    username = {}
+
     for friend in tqdm(friends):
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
         details = {
-            "screen_name": user["screen_name"],
+            "userid": user["id_str"],
             "followers_count": user["followers_count"],
             "friends_count": user["friends_count"],
             "listed_count": user["listed_count"],
@@ -297,9 +299,15 @@ def create_gml(screen_name):
             "statuses_count": user["statuses_count"]
         }
 
-        G.add_nodes_from([(friend, details)])
+        username[str(friend)] = user["screen_name"]
+        G.add_nodes_from([(user["screen_name"], details)])
+
+
+
+    for friend in tqdm(friends):
+
         second_friends = get_second_order_friends(friend)
-        second_edge = [(friend, x) for x in second_friends if x in friends]
+        second_edge = [(username[str(friend)], username[str(x)]) for x in second_friends if x in friends]
 
         # edges.extend(second_edge)
 
