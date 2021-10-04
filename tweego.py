@@ -12,9 +12,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-DATA_DIR = 'dataset'
-
-
 def encode_query(query):
     '''
     To preserve the original query, the query is
@@ -121,22 +118,6 @@ def is_folder_exists(folder_name):
     return os.path.exists(folder_name)
 
 
-keys_file = "keys.json"
-keys = json.load(open(keys_file, 'r'))
-
-apis = []
-for key in keys:
-    api = create_api(key)
-    apis.append({"connection": api, "available": 1, "time": None})
-
-screen_name = "verified"
-
-dump_dir = "{}/{}".format(DATA_DIR, screen_name)
-user_dir = "{}/{}".format(DATA_DIR, "users")
-create_dir(dump_dir)
-create_dir(user_dir)
-
-
 def init(apis, screen_name, cursor=-1):
     ids = []
     r = api_request(apis,
@@ -213,7 +194,7 @@ def get_second_order_friends(friend_id):
 
 
 # def collect_users(screen_name):
-    
+
 #     friends = get_ego_center_friends(screen_name)
 
 #     users = friends
@@ -231,10 +212,10 @@ def get_second_order_friends(friend_id):
 
 
 def get_users(apis, user_id):
-    
+
     r = api_request(apis,
                     'users/lookup', {'user_id': user_id, 'include_entities': "false"})
-    
+
     users = r.json()
 
     if 'errors' in r.json():
@@ -243,17 +224,20 @@ def get_users(apis, user_id):
 
     return(users)
 
+
 def friend_details(screen_name):
     friends = get_ego_center_friends(screen_name)
     n = 100
     groups = [friends[i:i+n] for i in range(0, len(friends), n)]
 
     for group in tqdm(groups):
-        users = get_users(apis, ",".join(map(str,group)))
+        users = get_users(apis, ",".join(map(str, group)))
         for user in users:
-            json.dump(user, open("{}/{}.json".format(user_dir, user["id"]), "w"))
+            json.dump(user, open(
+                "{}/{}.json".format(user_dir, user["id"]), "w"))
 
 # friend_details(screen_name)
+
 
 def create_gml(screen_name):
     G = nx.DiGraph()
@@ -278,18 +262,35 @@ def create_gml(screen_name):
         username[str(friend)] = user["screen_name"]
         G.add_nodes_from([(user["screen_name"], details)])
 
-
-
     for friend in tqdm(friends):
 
         second_friends = get_second_order_friends(friend)
-        second_edge = [(username[str(friend)], username[str(x)]) for x in second_friends if x in friends]
+        second_edge = [(username[str(friend)], username[str(x)])
+                       for x in second_friends if x in friends]
 
         # edges.extend(second_edge)
 
         G.add_edges_from(second_edge)
 
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
+
+
+DATA_DIR = 'dataset'
+
+keys_file = "keys.json"
+keys = json.load(open(keys_file, 'r'))
+
+apis = []
+for key in keys:
+    api = create_api(key)
+    apis.append({"connection": api, "available": 1, "time": None})
+
+screen_name = "verified"
+
+dump_dir = "{}/{}".format(DATA_DIR, screen_name)
+user_dir = "{}/{}".format(DATA_DIR, "users")
+create_dir(dump_dir)
+create_dir(user_dir)
 
 
 create_gml(screen_name)
