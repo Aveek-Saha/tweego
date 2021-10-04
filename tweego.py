@@ -6,35 +6,11 @@ import time
 import datetime
 import json
 
-import requests
 from TwitterAPI import TwitterAPI, TwitterPager
 
 import networkx as nx
 import matplotlib.pyplot as plt
 
-#     url = create_url(screen_name, cursor)
-#     json_response = connect_to_endpoint(url).json()
-#     next_cursor = json_response["next_cursor_str"]
-#     users = json_response["users"]
-#     for user in users:
-#         json.dump(user, open("{}/{}.json".format(dump_dir, user["id_str"]), "w"))
-
-#     while next_cursor != "0":
-#         url = create_url(screen_name, next_cursor)
-#         response = connect_to_endpoint(url)
-#         if response.status_code == 429:
-#             print("exceeded")
-
-#         json_response = response.json()
-#         next_cursor = json_response["next_cursor_str"]
-#         users = json_response["users"]
-#         for user in users:
-#             json.dump(user, open("{}/{}.json".format(dump_dir, user["id_str"]), "w"))
-#         print(json.dumps(json_response, indent=4, sort_keys=True))
-
-
-# if __name__ == "__main__":
-#     main()
 
 DATA_DIR = 'dataset'
 
