@@ -1,7 +1,6 @@
 from tqdm import tqdm
 import os
 import errno
-import urllib.parse
 import time
 import datetime
 import json
@@ -11,13 +10,7 @@ from TwitterAPI import TwitterAPI, TwitterPager
 import networkx as nx
 import matplotlib.pyplot as plt
 
-
-def encode_query(query):
-    '''
-    To preserve the original query, the query is
-    url-encoded with no safe ("/") characters.
-    '''
-    return (urllib.parse.quote(query.strip(), safe=''))
+from utils import *
 
 
 def create_api(config):
@@ -64,15 +57,12 @@ def collect_friends(apis, account_id, cursor=-1, limit=5000):
     r = api_request(apis,
                     'friends/ids', {'user_id': account_id, 'cursor': cursor})
 
-    # todo: wait if api requests are exhausted
-
     if 'errors' in r.json():
         if r.json()['errors'][0]['code'] == 34:
             return(ids)
 
     if 'ids' in r.json():
         ids = r.json()['ids']
-        # print("Collected {} ids".format(len(ids)))
 
     if limit > 5000:
         if 'next_cursor' in r.json():
@@ -107,15 +97,6 @@ def collect_and_save_friends(apis, user, refresh=False):
         friends = collect_friends(apis, user)
         save_friends(user, friends)
         return()
-
-
-def create_dir(dir_name):
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-
-
-def is_folder_exists(folder_name):
-    return os.path.exists(folder_name)
 
 
 def init(apis, screen_name, cursor=-1):
