@@ -14,6 +14,7 @@ from utils import *
 
 
 def create_api(config):
+    # Create a Twitter API object
     api = TwitterAPI(config['app_key'],
                      config['app_secret'],
                      config['oauth_token'],
@@ -23,6 +24,7 @@ def create_api(config):
 
 
 def pick_api(apis):
+    # Pick an API object that hasn't timed out
     available = [api["available"] for api in apis]
     if all(v == 0 for v in available):
         return None, -1
@@ -32,7 +34,7 @@ def pick_api(apis):
 
 
 def api_request(apis, endpoint, params):
-    # print(apis)
+    # Send a request using an available API object
     api, index = pick_api(apis)
     if index != -1:
         r = api["connection"].request(endpoint, params)
@@ -135,6 +137,7 @@ def first_order_ego(apis, screen_name):
 
 
 def get_ego_center_friends(screen_name):
+    # create the users friend list
     friends = []
     try:
         with open('{}/{}.txt'.format(dump_dir, screen_name)) as f:
@@ -148,6 +151,7 @@ def get_ego_center_friends(screen_name):
 def second_order_ego(screen_name):
     friends = get_ego_center_friends(screen_name)
 
+    print("Collecting friends of friends")
     for friend in tqdm(friends):
         friend_dir = "{}/{}".format(dump_dir, str(friend))
         if is_folder_exists('{0}/{1}.txt'.format(friend_dir, str(friend))):
@@ -221,7 +225,9 @@ def friend_details(screen_name):
 
 
 def create_gml(screen_name):
+    # Create a directed graph to store the ego net
     G = nx.DiGraph()
+    # Get first degree network
     friends = get_ego_center_friends(screen_name)
 
     # edges = [(screen_name, x) for x in friends]
@@ -273,5 +279,11 @@ user_dir = "{}/{}".format(DATA_DIR, "users")
 create_dir(dump_dir)
 create_dir(user_dir)
 
+# # Get the first order ego net for the given user
+# first_order_ego(apis, screen_name)
 
-create_gml(screen_name)
+# Collect second order ego network
+second_order_ego(screen_name)
+
+# # Create a GML of the ego network for the user
+# create_gml(screen_name)
