@@ -142,12 +142,13 @@ def get_ego_center_friends(screen_name):
         with open('{}/{}.txt'.format(DATA_DIR, screen_name)) as f:
             for line in f:
                 friends.append(int(line))
-    except:
+    except Exception as e:
+        print("Error: ", e)
         pass
     return (friends)
 
 
-def second_order_ego(screen_name, limit=10000):
+def second_order_ego(screen_name, limit=5000):
     friends = get_ego_center_friends(screen_name)
 
     print("Collecting friends of friends")
@@ -157,10 +158,7 @@ def second_order_ego(screen_name, limit=10000):
             continue
         create_dir(friend_dir)
 
-        try:
-            ids = collect_friends(apis, friend, limit)
-        except Exception as e:
-            print("Error: ", e)
+        ids = collect_friends(apis, friend, limit)
 
         with open('{0}/{1}.txt'.format(friend_dir, str(friend)), 'w', encoding='utf-8') as f:
             f.write(str.join('\n', (str(x) for x in ids)))
@@ -258,6 +256,11 @@ def create_gml(screen_name):
         # edges.extend(second_edge)
 
         G.add_edges_from(second_edge)
+    
+    screen_name_edge = [(screen_name, username[str(x)])
+                    for x in friends if x in friends]
+
+    G.add_edges_from(screen_name_edge)
 
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
 
@@ -273,7 +276,7 @@ def cli():
 @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
 @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
 @click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
-@click.option("-f", "--follower-limit", default=5000, type=int, help="Number of followers for the second order ego")
+@click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
 def generate(dir, keys_file, screen_name, follower_limit):
     global DATA_DIR
     global dump_dir
