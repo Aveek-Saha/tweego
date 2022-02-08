@@ -1,4 +1,6 @@
 from tqdm import tqdm
+import click
+
 import os
 import errno
 import time
@@ -8,7 +10,6 @@ import json
 from TwitterAPI import TwitterAPI, TwitterPager
 
 import networkx as nx
-import matplotlib.pyplot as plt
 
 from utils import *
 
@@ -130,17 +131,15 @@ def init(apis, screen_name, cursor=-1):
 def first_order_ego(apis, screen_name):
     ids = init(apis, screen_name)
 
-    with open('{0}/{1}.txt'.format(dump_dir, screen_name), 'w', encoding='utf-8') as f:
+    with open('{0}/{1}.txt'.format(DATA_DIR, screen_name), 'w', encoding='utf-8') as f:
         f.write(str.join('\n', (str(x) for x in ids)))
-
-# first_order_ego(apis, screen_name)
 
 
 def get_ego_center_friends(screen_name):
     # create the users friend list
     friends = []
     try:
-        with open('{}/{}.txt'.format(dump_dir, screen_name)) as f:
+        with open('{}/{}.txt'.format(DATA_DIR, screen_name)) as f:
             for line in f:
                 friends.append(int(line))
     except:
@@ -148,7 +147,7 @@ def get_ego_center_friends(screen_name):
     return (friends)
 
 
-def second_order_ego(screen_name):
+def second_order_ego(screen_name, limit=10000):
     friends = get_ego_center_friends(screen_name)
 
     print("Collecting friends of friends")
@@ -158,7 +157,10 @@ def second_order_ego(screen_name):
             continue
         create_dir(friend_dir)
 
-        ids = collect_friends(apis, friend, limit=10000)
+        try:
+            ids = collect_friends(apis, friend, limit)
+        except Exception as e:
+            print("Error: ", e)
 
         with open('{0}/{1}.txt'.format(friend_dir, str(friend)), 'w', encoding='utf-8') as f:
             f.write(str.join('\n', (str(x) for x in ids)))
@@ -221,8 +223,6 @@ def friend_details(screen_name):
             json.dump(user, open(
                 "{}/{}.json".format(user_dir, user["id"]), "w"))
 
-# friend_details(screen_name)
-
 
 def create_gml(screen_name):
     # Create a directed graph to store the ego net
@@ -262,28 +262,56 @@ def create_gml(screen_name):
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
 
 
-DATA_DIR = 'dataset'
+@click.group()
+@click.version_option()
+def cli():
+    """Tweego.
+    This is a command line program to generate second order ego networks for Twitter users.
+    """
 
-keys_file = "keys.json"
-keys = json.load(open(keys_file, 'r'))
+@click.command()
+@click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
+@click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
+@click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
+@click.option("-f", "--follower-limit", default=5000, type=int, help="Number of followers for the second order ego")
+def generate(dir, keys_file, screen_name, follower_limit):
+    global DATA_DIR
+    global dump_dir
+    global user_dir
+    global apis
 
-apis = []
-for key in keys:
-    api = create_api(key)
-    apis.append({"connection": api, "available": 1, "time": None})
+    DATA_DIR = dir
 
-screen_name = "verified"
+    # keys_file = "keys.json"
+    keys = json.load(open(keys_file, 'r'))
 
-dump_dir = "{}/{}".format(DATA_DIR, screen_name)
-user_dir = "{}/{}".format(DATA_DIR, "users")
-create_dir(dump_dir)
-create_dir(user_dir)
+    apis = []
+    for key in keys:
+        api = create_api(key)
+        apis.append({"connection": api, "available": 1, "time": None})
 
-# # Get the first order ego net for the given user
-# first_order_ego(apis, screen_name)
+    # screen_name = "verified"
 
-# Collect second order ego network
-second_order_ego(screen_name)
+    dump_dir = "{}/{}".format(DATA_DIR, screen_name)
+    user_dir = "{}/{}".format(DATA_DIR, "users")
+    create_dir(dump_dir)
+    create_dir(user_dir)
 
-# # Create a GML of the ego network for the user
-# create_gml(screen_name)
+    # Get the first order ego net for the given user
+    print("Get first order egos")
+    first_order_ego(apis, screen_name)
+
+    # Collect second order ego network
+    print("Get second order egos")
+    second_order_ego(screen_name, follower_limit)
+
+    # Get user details
+    print("Get user details")
+    friend_details(screen_name)
+
+    # Create a GML of the ego network for the user
+    print("Generate gml")
+    create_gml(screen_name)
+    
+
+cli.add_command(generate)
