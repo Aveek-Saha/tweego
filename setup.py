@@ -19,7 +19,6 @@ setuptools.setup(
         'Click',
         'networkx',
         'TwitterAPI',
-        'matplotlib',
         'tqdm'
     ],
     entry_points={
