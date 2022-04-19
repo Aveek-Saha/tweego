@@ -167,6 +167,9 @@ def second_order_ego(screen_name, limit=5000):
     print("Collecting friends of friends")
     for friend in tqdm(friends):
         friend_dir = "{}/{}".format(dump_dir, str(friend))
+        user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
+        if (user["friends_count"] > limit):
+            continue
         if is_folder_exists('{0}/{1}.txt'.format(friend_dir, str(friend))):
             continue
         create_dir(friend_dir)
@@ -316,14 +319,14 @@ def generate(dir, keys_file, screen_name, follower_limit):
     # Get the first order ego net for the given user
     print("Get first order egos")
     first_order_ego(apis, screen_name)
+    
+    # Get user details
+    print("Get user details")
+    friend_details(screen_name)
 
     # Collect second order ego network
     print("Get second order egos")
     second_order_ego(screen_name, follower_limit)
-
-    # Get user details
-    print("Get user details")
-    friend_details(screen_name)
 
     # Create a GML of the ego network for the user
     print("Generate gml")
