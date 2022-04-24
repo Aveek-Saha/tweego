@@ -164,8 +164,16 @@ def get_ego_center_friends(screen_name):
 def second_order_ego(screen_name, limit=5000):
     friends = get_ego_center_friends(screen_name)
 
+    filtered_friends = []
+    for friend in friends:
+        user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
+        if (user["friends_count"] > limit):
+            continue
+        else:
+            filtered_friends.append(friend)
+
     print("Collecting friends of friends")
-    for friend in tqdm(friends):
+    for friend in tqdm(filtered_friends):
         friend_dir = "{}/{}".format(dump_dir, str(friend))
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
         if (user["friends_count"] > limit):
@@ -281,18 +289,18 @@ def create_gml(screen_name):
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
 
 
-@click.group()
-@click.version_option()
-def cli():
-    """Tweego.
-    This is a command line program to generate second order ego networks for Twitter users.
-    """
+# @click.group()
+# @click.version_option()
+# def cli():
+#     """Tweego.
+#     This is a command line program to generate second order ego networks for Twitter users.
+#     """
 
-@click.command()
-@click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
-@click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
-@click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
-@click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
+# @click.command()
+# @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
+# @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
+# @click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
+# @click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
 def generate(dir, keys_file, screen_name, follower_limit):
     global DATA_DIR
     global dump_dir
@@ -333,4 +341,5 @@ def generate(dir, keys_file, screen_name, follower_limit):
     create_gml(screen_name)
     
 
-cli.add_command(generate)
+# cli.add_command(generate)
+generate("dataset", "keys.json", "verified", 10000)
