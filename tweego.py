@@ -20,13 +20,6 @@ def is_folder_exists(folder_name):
     return os.path.exists(folder_name)
 
 
-def encode_query(query):
-    '''
-    To preserve the original query, the query is
-    url-encoded with no safe ("/") characters.
-    '''
-    return (urllib.parse.quote(query.strip(), safe=''))
-
 def create_api(config):
     # Create a Twitter API object
     api = TwitterAPI(config['app_key'],
@@ -165,19 +158,21 @@ def second_order_ego(screen_name, limit=5000):
     friends = get_ego_center_friends(screen_name)
 
     filtered_friends = []
-    for friend in friends:
-        user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
-        if (user["friends_count"] > limit):
-            continue
-        else:
-            filtered_friends.append(friend)
+    print("Filtering friends")
+    for friend in tqdm(friends):
+        try:
+            user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
+            if (user["friends_count"] > limit):
+                continue
+            else:
+                filtered_friends.append(friend)
+        except Exception as e:
+            print(e)
 
     print("Collecting friends of friends")
     for friend in tqdm(filtered_friends):
         friend_dir = "{}/{}".format(dump_dir, str(friend))
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
-        if (user["friends_count"] > limit):
-            continue
         if is_folder_exists('{0}/{1}.txt'.format(friend_dir, str(friend))):
             continue
         create_dir(friend_dir)
@@ -236,8 +231,15 @@ def get_users(apis, user_id):
 
 def friend_details(screen_name):
     friends = get_ego_center_friends(screen_name)
+    filtered_friends = []
+
+    print("Filtering friends")
+    for friend in tqdm(friends):
+        if (os.path.exists("{}/{}.json".format(user_dir, str(friend)))):
+            filtered_friends.append(friend)
+
     n = 100
-    groups = [friends[i:i+n] for i in range(0, len(friends), n)]
+    groups = [filtered_friends[i:i+n] for i in range(0, len(filtered_friends), n)]
 
     for group in tqdm(groups):
         users = get_users(apis, ",".join(map(str, group)))
