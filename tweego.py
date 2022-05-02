@@ -235,7 +235,7 @@ def friend_details(screen_name):
 
     print("Filtering friends")
     for friend in tqdm(friends):
-        if (os.path.exists("{}/{}.json".format(user_dir, str(friend)))):
+        if (not os.path.exists("{}/{}.json".format(user_dir, str(friend)))):
             filtered_friends.append(friend)
 
     n = 100
