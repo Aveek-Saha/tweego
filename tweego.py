@@ -248,7 +248,7 @@ def friend_details(screen_name):
                 "{}/{}.json".format(user_dir, user["id"]), "w"))
 
 
-def create_gml(screen_name):
+def create_gml(screen_name, limit=5000):
     # Create a directed graph to store the ego net
     G = nx.DiGraph()
     # Get first degree network
@@ -258,33 +258,38 @@ def create_gml(screen_name):
     # G.add_edges_from(edges)
 
     username = {}
+    filtered_friends = []
 
     for friend in tqdm(friends):
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
-        details = {
-            "userid": user["id_str"],
-            "followers_count": user["followers_count"],
-            "friends_count": user["friends_count"],
-            "listed_count": user["listed_count"],
-            "verified": user["verified"],
-            "statuses_count": user["statuses_count"]
-        }
+        if (user["friends_count"] > limit):
+                continue
+        else:
+            filtered_friends.append(friend)
+            details = {
+                "userid": user["id_str"],
+                "followers_count": user["followers_count"],
+                "friends_count": user["friends_count"],
+                "listed_count": user["listed_count"],
+                "verified": user["verified"],
+                "statuses_count": user["statuses_count"]
+            }
 
-        username[str(friend)] = user["screen_name"]
-        G.add_nodes_from([(user["screen_name"], details)])
+            username[str(friend)] = user["screen_name"]
+            G.add_nodes_from([(user["screen_name"], details)])
 
-    for friend in tqdm(friends):
+    for friend in tqdm(filtered_friends):
 
         second_friends = get_second_order_friends(friend)
         second_edge = [(username[str(friend)], username[str(x)])
-                       for x in second_friends if x in friends]
+                       for x in second_friends if x in filtered_friends]
 
         # edges.extend(second_edge)
 
         G.add_edges_from(second_edge)
     
     screen_name_edge = [(screen_name, username[str(x)])
-                    for x in friends if x in friends]
+                    for x in filtered_friends]
 
     G.add_edges_from(screen_name_edge)
 
@@ -340,7 +345,7 @@ def generate(dir, keys_file, screen_name, follower_limit):
 
     # Create a GML of the ego network for the user
     print("Generate gml")
-    create_gml(screen_name)
+    create_gml(screen_name, follower_limit)
     
 
 # cli.add_command(generate)
