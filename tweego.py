@@ -177,7 +177,7 @@ def second_order_ego(screen_name, limit=5000):
             continue
         create_dir(friend_dir)
 
-        ids = collect_friends(apis, friend, limit)
+        ids = collect_friends(apis, friend, -1, limit)
 
         with open('{0}/{1}.txt'.format(friend_dir, str(friend)), 'w', encoding='utf-8') as f:
             f.write(str.join('\n', (str(x) for x in ids)))
