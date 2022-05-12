@@ -297,18 +297,17 @@ def create_gml(screen_name, limit=5000):
 
 
 # @click.group()
-# @click.version_option()
-# def cli():
-#     """Tweego.
-#     This is a command line program to generate second order ego networks for Twitter users.
-#     """
+@click.command()
+@click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
+@click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
+@click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
+@click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
+@click.version_option()
+def cli(dir, keys_file, screen_name, follower_limit):
+    """Tweego.
+    This is a command line program to generate second order ego networks for Twitter users.
+    """
 
-# @click.command()
-# @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
-# @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
-# @click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
-# @click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
-def generate(dir, keys_file, screen_name, follower_limit):
     global DATA_DIR
     global dump_dir
     global user_dir
@@ -349,4 +348,4 @@ def generate(dir, keys_file, screen_name, follower_limit):
     
 
 # cli.add_command(generate)
-generate("dataset", "keys.json", "verified", 10000)
+# generate("dataset", "keys.json", "verified", 10000)

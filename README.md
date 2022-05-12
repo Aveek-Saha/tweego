@@ -13,7 +13,7 @@ pip install tweego
 ## CLI
 
 ```
-tweego generate-network [OPTIONS]
+tweego [OPTIONS]
 
 Options:
   -d, --dir PATH                Directory to store data
@@ -26,7 +26,7 @@ Options:
 ### Example
 
 ```
-tweego generate -d "dataset" -k "keys.json" -n "github"
+tweego -d "dataset" -k "keys.json" -n "github"
 ```
 
 ## API keys format
