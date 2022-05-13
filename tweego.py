@@ -2,14 +2,14 @@ from tqdm import tqdm
 import click
 
 import os
-import errno
 import time
 import datetime
 import json
 
-from TwitterAPI import TwitterAPI, TwitterPager
+from TwitterAPI import TwitterAPI
 
 import networkx as nx
+
 
 def create_dir(dir_name):
     if not os.path.exists(dir_name):
@@ -161,7 +161,8 @@ def second_order_ego(screen_name, limit=5000):
     print("Filtering friends")
     for friend in tqdm(friends):
         try:
-            user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
+            user = json.load(
+                open("{}/{}.json".format(user_dir, str(friend)), "r"))
             if (user["friends_count"] > limit):
                 continue
             else:
@@ -197,24 +198,6 @@ def get_second_order_friends(friend_id):
     return friends
 
 
-# def collect_users(screen_name):
-
-#     friends = get_ego_center_friends(screen_name)
-
-#     users = friends
-#     print(len(users))
-#     for friend in tqdm(friends[:20]):
-#         user_friends = get_second_order_friends(friend)
-#         users.extend(user_friends)
-
-#     unique_users = list(set(users))
-
-#     print(len(users))
-#     print(len(unique_users))
-
-# collect_users(screen_name)
-
-
 def get_users(apis, user_id):
 
     r = api_request(apis,
@@ -239,7 +222,8 @@ def friend_details(screen_name):
             filtered_friends.append(friend)
 
     n = 100
-    groups = [filtered_friends[i:i+n] for i in range(0, len(filtered_friends), n)]
+    groups = [filtered_friends[i:i+n]
+              for i in range(0, len(filtered_friends), n)]
 
     for group in tqdm(groups):
         users = get_users(apis, ",".join(map(str, group)))
@@ -254,16 +238,13 @@ def create_gml(screen_name, limit=5000):
     # Get first degree network
     friends = get_ego_center_friends(screen_name)
 
-    # edges = [(screen_name, x) for x in friends]
-    # G.add_edges_from(edges)
-
     username = {}
     filtered_friends = []
 
     for friend in tqdm(friends):
         user = json.load(open("{}/{}.json".format(user_dir, str(friend)), "r"))
         if (user["friends_count"] > limit):
-                continue
+            continue
         else:
             filtered_friends.append(friend)
             details = {
@@ -284,19 +265,15 @@ def create_gml(screen_name, limit=5000):
         second_edge = [(username[str(friend)], username[str(x)])
                        for x in second_friends if x in filtered_friends]
 
-        # edges.extend(second_edge)
-
         G.add_edges_from(second_edge)
-    
-    screen_name_edge = [(screen_name, username[str(x)])
-                    for x in filtered_friends]
 
+    screen_name_edge = [(screen_name, username[str(x)])
+                        for x in filtered_friends]
     G.add_edges_from(screen_name_edge)
 
     nx.write_gml(G, "{}/{}.gml".format(DATA_DIR, screen_name))
 
 
-# @click.group()
 @click.command()
 @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
 @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
@@ -333,7 +310,7 @@ def cli(dir, keys_file, screen_name, follower_limit):
     # Get the first order ego net for the given user
     print("Get first order egos")
     first_order_ego(apis, screen_name)
-    
+
     # Get user details
     print("Get user details")
     friend_details(screen_name)
@@ -345,7 +322,6 @@ def cli(dir, keys_file, screen_name, follower_limit):
     # Create a GML of the ego network for the user
     print("Generate gml")
     create_gml(screen_name, follower_limit)
-    
 
-# cli.add_command(generate)
-# generate("dataset", "keys.json", "verified", 10000)
+
+# cli("dataset", "keys.json", "verified", 10000)
