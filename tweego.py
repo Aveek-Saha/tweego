@@ -275,10 +275,10 @@ def create_gml(screen_name, limit=5000):
 
 
 @click.command()
-@click.option("-fo", "--first-order", is_flag=True, default=True, help="Collect first order ego")
-@click.option("-u", "--users", is_flag=True, default=True, help="Collect user data")
-@click.option("-so", "--second-order", is_flag=True, default=True, help="Collect second order ego")
-@click.option("-g", "--graph", is_flag=True, default=True, help="Generate graph file")
+@click.option("-fo", "--first-order", is_flag=True, default=False, help="Flag: Collect first order ego")
+@click.option("-u", "--users", is_flag=True, default=False, help="Flag: Collect user data")
+@click.option("-so", "--second-order", is_flag=True, default=False, help="Flag: Collect second order ego")
+@click.option("-g", "--graph", is_flag=True, default=False, help="Flag: Generate graph file")
 @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
 @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
 @click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
@@ -333,3 +333,5 @@ def cli(dir, keys_file, screen_name, follower_limit, first_order, users, second_
 
 
 # cli("dataset", "keys.json", "verified", 10000)
+# if __name__ == '__main__':
+#     cli()
