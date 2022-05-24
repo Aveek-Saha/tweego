@@ -275,12 +275,16 @@ def create_gml(screen_name, limit=5000):
 
 
 @click.command()
+@click.option("-fo", "--first-order", is_flag=True, default=True, help="Collect first order ego")
+@click.option("-u", "--users", is_flag=True, default=True, help="Collect user data")
+@click.option("-so", "--second-order", is_flag=True, default=True, help="Collect second order ego")
+@click.option("-g", "--graph", is_flag=True, default=True, help="Generate graph file")
 @click.option("-d", "--dir", type=click.Path(), help="Directory to store data")
 @click.option("-k", "--keys-file", type=click.Path(exists=True), help="Location of the api keys JSON file")
 @click.option("-n", "--screen-name", type=str, help="The screen name of the ego center user")
 @click.option("-f", "--follower-limit", type=int, help="Number of followers for the second order ego")
 @click.version_option()
-def cli(dir, keys_file, screen_name, follower_limit):
+def cli(dir, keys_file, screen_name, follower_limit, first_order, users, second_order, graph):
     """Tweego.
     This is a command line program to generate second order ego networks for Twitter users.
     """
@@ -307,21 +311,25 @@ def cli(dir, keys_file, screen_name, follower_limit):
     create_dir(dump_dir)
     create_dir(user_dir)
 
-    # Get the first order ego net for the given user
-    print("Get first order egos")
-    first_order_ego(apis, screen_name)
+    if(first_order):
+        # Get the first order ego net for the given user
+        print("Get first order egos")
+        first_order_ego(apis, screen_name)
 
-    # Get user details
-    print("Get user details")
-    friend_details(screen_name)
+    if(users):
+        # Get user details
+        print("Get user details")
+        friend_details(screen_name)
 
-    # Collect second order ego network
-    print("Get second order egos")
-    second_order_ego(screen_name, follower_limit)
+    if(second_order):
+        # Collect second order ego network
+        print("Get second order egos")
+        second_order_ego(screen_name, follower_limit)
 
-    # Create a GML of the ego network for the user
-    print("Generate gml")
-    create_gml(screen_name, follower_limit)
+    if(graph):
+        # Create a GML of the ego network for the user
+        print("Generate gml")
+        create_gml(screen_name, follower_limit)
 
 
 # cli("dataset", "keys.json", "verified", 10000)
