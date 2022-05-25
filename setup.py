@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='tweego',
-    version='1.0.0',
+    version='1.1.0',
     author="Aveek Saha",
     author_email="aveek.s98@gmail.com",
     url='https://github.com/Aveek-Saha/tweego',
