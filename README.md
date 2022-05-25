@@ -16,17 +16,36 @@ pip install tweego
 tweego [OPTIONS]
 
 Options:
+  -fo, --first-order            Flag: Collect first order ego
+  -u, --users                   Flag: Collect user data
+  -so, --second-order           Flag: Collect second order ego
+  -g, --graph                   Flag: Generate graph file
   -d, --dir PATH                Directory to store data
   -k, --keys-file PATH          Location of the api keys JSON file
   -n, --screen-name TEXT        The screen name of the ego center user
   -f, --follower-limit INTEGER  Number of followers for the second order ego
+  --version                     Show the version and exit.
   --help                        Show this message and exit.
 ```
 
 ### Example
 
+Collect everything:
+
 ```
-tweego -d "dataset" -k "keys.json" -n "github"
+tweego -d "dataset" -k "keys.json" -n "github" --fo --u --so -g
+```
+
+Collect first order connections only:
+
+```
+tweego -d "dataset" -k "keys.json" -n "github" --fo
+```
+
+Collect users and second order connections only:
+
+```
+tweego -d "dataset" -k "keys.json" -n "github" --u --so
 ```
 
 ## API keys format
