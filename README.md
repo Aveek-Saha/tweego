@@ -33,19 +33,19 @@ Options:
 Collect everything:
 
 ```
-tweego -d "dataset" -k "keys.json" -n "github" --fo --u --so -g
+tweego -d "dataset" -k "keys.json" -n "github" -fo -u -so -g
 ```
 
 Collect first order connections only:
 
 ```
-tweego -d "dataset" -k "keys.json" -n "github" --fo
+tweego -d "dataset" -k "keys.json" -n "github" -fo
 ```
 
 Collect users and second order connections only:
 
 ```
-tweego -d "dataset" -k "keys.json" -n "github" --u --so
+tweego -d "dataset" -k "keys.json" -n "github" -u -so
 ```
 
 ## API keys format
